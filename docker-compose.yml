@@ -1,4 +1,3 @@
-version: '3.5'
 services:
   parsedmarc:
     build: ./parsedmarc/
@@ -11,11 +10,10 @@ services:
     restart: on-failure
 
   elasticsearch:
-    image: docker.elastic.co/elasticsearch/elasticsearch:7.17.5
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.16.4
     environment:
       - discovery.type=single-node
-    volumes:
-      - ./elastic_data:/usr/share/elasticsearch/data
+      - xpack.security.enabled=false
 
   grafana:
     build: ./grafana/
