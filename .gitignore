@@ -1,5 +1,19 @@
-/files/
-/output_files/
-/parsedmarc/GeoLite2-Country*
-/elastic_data/
-parsedmarc.ini
+# Dockerのデータボリューム（もしホスト側にマウントしている場合）
+elastic_data/
+grafana_data/
+
+# レポートファイル（実データはGitに入れない）
+input_files/*
+processed_files/*
+output_files/*
+
+# 解析中の一時ファイル
+/tmp/list.txt
+bulk_data.jsonl
+
+# Windowsのメタデータ
+*Zone.Identifier
+
+# OSの一時ファイル
+.DS_Store
+Thumbs.db
