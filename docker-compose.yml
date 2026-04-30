@@ -6,12 +6,12 @@ services:
     environment:
       - no_proxy=elasticsearch,localhost,127.0.0.1
       - NO_PROXY=elasticsearch,localhost,127.0.0.1
-      - http_proxy=http://172.16.1.10:12080
-      - https_proxy=http://172.16.1.10:12080
+      - http_proxy=http://proxy:port
+      - https_proxy=http://proxy:port
+      - no_proxy=localhost,127.0.0.1,elasticsearch,grafana
     volumes:
       - ./input_files:/input:rw
-      - ./processed_files:/processed:rw
-      - ./output_files:/output
+      - ./output_files:/output:rw
     command: >
       /bin/sh -c "
       echo '監視を開始します（全機能保持・安定版）...';
