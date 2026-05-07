@@ -33,7 +33,7 @@ services:
           # 4. 1つずつ移動
           while IFS= read -r f; do
             if [ -f \"$$f\" ]; then
-              mv \"$$f\" /processed/
+              mv \"$$f\" /output/
             fi
           done < /tmp/list.txt
         fi
