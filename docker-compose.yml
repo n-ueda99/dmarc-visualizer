@@ -12,6 +12,7 @@ services:
     volumes:
       - ./input_files:/input:rw
       - ./output_files:/output:rw
+      - ./parsedmarc.ini:/etc/parsedmarc.ini
     command: >
       /bin/sh -c "
       echo '監視を開始します（全機能保持・安定版）...';
