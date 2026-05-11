@@ -6,38 +6,28 @@ services:
     environment:
       - no_proxy=elasticsearch,localhost,127.0.0.1
       - NO_PROXY=elasticsearch,localhost,127.0.0.1
-      - http_proxy=http://proxy:port
-      - https_proxy=http://proxy:port
+      - http_proxy=http://172.16.1.10:12080
+      - https_proxy=http://172.16.1.10:12080
       - no_proxy=localhost,127.0.0.1,elasticsearch,grafana
     volumes:
-      - ./input_files:/input:rw
-      - ./output_files:/output:rw
-      - ./parsedmarc/parsedmarc.ini:/etc/parsedmarc.ini
+      - ./input_files:/input_files:rw
+      - ./output_files:/output_files:rw
+      - ./parsedmarc.ini:/etc/parsedmarc.ini
     command: >
       /bin/sh -c "
-      echo '監視を開始します（全機能保持・安定版）...';
+      echo '監視を開始します（完全修正版）...';
       while true; do
-        # 1. Zone.Identifier ファイルを強制削除
         find /input -maxdepth 1 -name '*Zone.Identifier' -delete
         
-        # 2. .gz と .zip を一括リストアップ（互換性の高い記述に変更）
-        find /input -maxdepth 1 -name '*.gz' > /tmp/list.txt
-        find /input -maxdepth 1 -name '*.zip' >> /tmp/list.txt
-        
-        if [ -s /tmp/list.txt ]; then
-          echo '一括解析を開始します...'
-          # 3. スペース対応の解析実行
-          cat /tmp/list.txt | tr '\n' '\0' | xargs -0 parsedmarc -c /parsedmarc.ini --offline
-          
-          echo '処理を試みたファイルを移動しています...'
-          # 4. 1つずつ移動
-          while IFS= read -r f; do
-            if [ -f \"$$f\" ]; then
-              mv \"$$f\" /output/
-            fi
-          done < /tmp/list.txt
-        fi
-        rm -f /tmp/list.txt
+        # 1ファイルずつ確実に解析して移動
+        for f in /input/*.xml /input/*.gz /input/*.zip; do
+          if [ -f \"\$f\" ]; then
+            echo \"解析中: \$f\"
+            parsedmarc --skip-dns -c /etc/parsedmarc.ini \"\$f\"
+            echo \"移動中: \$f\"
+            mv \"\$f\" /output/
+          fi
+        done
         sleep 30
       done"
     depends_on:
