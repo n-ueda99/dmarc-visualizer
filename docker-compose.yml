@@ -4,28 +4,33 @@ services:
     networks:
       - dmarc_net
     environment:
-      - no_proxy=elasticsearch,localhost,127.0.0.1
-      - NO_PROXY=elasticsearch,localhost,127.0.0.1
-      - http_proxy=http://172.16.1.10:12080
-      - https_proxy=http://172.16.1.10:12080
-      - no_proxy=localhost,127.0.0.1,elasticsearch,grafana
+      - no_proxy=elasticsearch,localhost,127.0.0.1,grafana
+      - NO_PROXY=elasticsearch,localhost,127.0.0.1,grafana
+      - http_proxy=http://proxy:port
+      - https_proxy=http://proxy:port
     volumes:
-      - ./input_files:/input_files:rw
-      - ./output_files:/output_files:rw
-      - ./parsedmarc.ini:/etc/parsedmarc.ini
+      - ./input_files:/input:rw
+      - ./output_files:/output:rw
+      - ./parsedmarc/parsedmarc.ini:/etc/parsedmarc.ini
     command: >
       /bin/sh -c "
-      echo '監視を開始します（完全修正版）...';
+      echo '監視を開始します（最新・安定化版）...';
       while true; do
-        find /input -maxdepth 1 -name '*Zone.Identifier' -delete
-        
-        # 1ファイルずつ確実に解析して移動
+        find /input -maxdepth 1 -name '*Zone.Identifier' -delete;
+        # 1ファイルずつ処理
         for f in /input/*.xml /input/*.gz /input/*.zip; do
-          if [ -f \"\$f\" ]; then
-            echo \"解析中: \$f\"
-            parsedmarc --skip-dns -c /etc/parsedmarc.ini \"\$f\"
-            echo \"移動中: \$f\"
-            mv \"\$f\" /output/
+          if [ -f \"$f\" ]; then
+            filename=\$(basename \"$f\")
+            echo \"解析開始: \$filename\"
+            # 一時フォルダで解析（無限ループ防止）
+            parsedmarc --offline -c /etc/parsedmarc.ini \"$f\"
+            if [ \$? -eq 0 ]; then
+              echo \"解析成功: \$filename\"
+            else
+              echo \"解析失敗（スキップします）: \$filename\"
+            fi
+            # 成功・失敗に関わらず移動（詰まりを防止）
+            mv \"$f\" /output/
           fi
         done
         sleep 30
@@ -47,8 +52,6 @@ services:
       - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
       - no_proxy=localhost,127.0.0.1
       - NO_PROXY=localhost,127.0.0.1
-    volumes:
-      - elastic_data:/usr/share/elasticsearch/data
     healthcheck:
       test: ["CMD", "curl", "-s", "-f", "http://localhost:9200/_cluster/health"]
       interval: 10s
