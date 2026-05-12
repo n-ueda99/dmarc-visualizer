@@ -12,29 +12,8 @@ services:
       - ./input_files:/input:rw
       - ./output_files:/output:rw
       - ./parsedmarc/parsedmarc.ini:/etc/parsedmarc.ini
-    command: >
-      /bin/sh -c "
-      echo '監視を開始します（最新・安定化版）...';
-      while true; do
-        find /input -maxdepth 1 -name '*Zone.Identifier' -delete;
-        # 1ファイルずつ処理
-        for f in /input/*.xml /input/*.gz /input/*.zip; do
-          if [ -f \"$f\" ]; then
-            filename=\$(basename \"$f\")
-            echo \"解析開始: \$filename\"
-            # 一時フォルダで解析（無限ループ防止）
-            parsedmarc --offline -c /etc/parsedmarc.ini \"$f\"
-            if [ \$? -eq 0 ]; then
-              echo \"解析成功: \$filename\"
-            else
-              echo \"解析失敗（スキップします）: \$filename\"
-            fi
-            # 成功・失敗に関わらず移動（詰まりを防止）
-            mv \"$f\" /output/
-          fi
-        done
-        sleep 30
-      done"
+      - ./run_parsedmarc.sh:/run_parsedmarc.sh:ro
+    command: /bin/sh /run_parsedmarc.sh
     depends_on:
       elasticsearch:
         condition: service_healthy
@@ -49,9 +28,7 @@ services:
     environment:
       - discovery.type=single-node
       - xpack.security.enabled=false
-      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
-      - no_proxy=localhost,127.0.0.1
-      - NO_PROXY=localhost,127.0.0.1
+      - "ES_JAVA_OPTS=-Xms1g -Xmx1g"
     healthcheck:
       test: ["CMD", "curl", "-s", "-f", "http://localhost:9200/_cluster/health"]
       interval: 10s
@@ -68,8 +45,6 @@ services:
     environment:
       GF_AUTH_ANONYMOUS_ENABLED: "true"
       GF_AUTH_ANONYMOUS_ORG_ROLE: "Admin"
-      no_proxy: "elasticsearch,localhost,127.0.0.1"
-      NO_PROXY: "elasticsearch,localhost,127.0.0.1"
     volumes:
       - grafana_data:/var/lib/grafana
     depends_on:
