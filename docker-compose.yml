@@ -6,8 +6,8 @@ services:
     environment:
       - no_proxy=elasticsearch,localhost,127.0.0.1,grafana
       - NO_PROXY=elasticsearch,localhost,127.0.0.1,grafana
-      - http_proxy=http://proxy:port
-      - https_proxy=http://proxy:port
+      - http_proxy=${MY_PROXY}
+      - https_proxy=${MY_PROXY}
     volumes:
       - ./input_files:/input:rw
       - ./output_files:/output:rw
@@ -43,8 +43,8 @@ services:
       - "3000:3000"
     user: root
     environment:
-      GF_AUTH_ANONYMOUS_ENABLED: "true"
-      GF_AUTH_ANONYMOUS_ORG_ROLE: "Admin"
+      GF_AUTH_ANONYMOUS_ENABLED: \"true\"
+      GF_AUTH_ANONYMOUS_ORG_ROLE: \"Admin\"
     volumes:
       - grafana_data:/var/lib/grafana
     depends_on:
